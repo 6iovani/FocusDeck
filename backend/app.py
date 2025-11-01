@@ -4,7 +4,7 @@ import os
 import openai
 
 # Remove the incorrect export line, set API key from environment or hard-coded (not recommended for prod)
-openai.api_key = os.environ.get('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')
+openai.api_key = os.environ.get('')
 
 app = Flask(__name__)
 CORS(app)
