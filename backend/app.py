@@ -3,8 +3,8 @@ from flask_cors import CORS
 import os
 import openai
 
-# Remove the incorrect export line, set API key from environment or hard-coded (not recommended for prod)
-openai.api_key = os.environ.get('')
+#set API key from environment 
+openai.api_key = os.environ.get('key')
 
 app = Flask(__name__)
 CORS(app)
@@ -20,27 +20,27 @@ def flashcards():
     if not prompt:
         return jsonify({'error': 'Prompt is required'}), 400
     
-    # Compose an OpenAI prompt to create 5 flashcard (Q&A) pairs from notes
+    #prompt to create flashcards
     system_prompt = (
-        "Generate 5 flashcards (Q&A pairs) for study from these notes: "
+        "generate 10 flashcards Q&A pairs for study from these notes: "
         f"""{prompt}""" + "\n"
-        "Return a JSON list of objects, each with 'question' and 'answer' keys."
+        "return a JSON list of objects, each with 'question' and 'answer' keys."
     )
 
     try:
         completion = openai.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=[{"role": "system", "content": "You are a helpful flashcard generator."},
+            messages=[{"role": "system", "content": "you are a helpful flashcard generator."},
                       {"role": "user", "content": system_prompt}],
             temperature=0.35,
             max_tokens=650,
             response_format={"type": "json_object"}
         )
-        # Parse the assistant's content as JSON
+        #parse the content as JSON
         import json
         raw_content = completion.choices[0].message.content
         parsed = json.loads(raw_content)
-        flashcards = parsed["flashcards"] if "flashcards" in parsed else parsed  # Flexible parsing
+        flashcards = parsed["flashcards"] if "flashcards" in parsed else parsed  
         result_cards = []
         for fc in flashcards:
             if isinstance(fc, dict) and 'question' in fc and 'answer' in fc:
@@ -50,7 +50,43 @@ def flashcards():
                 })
         return jsonify({'flashcards': result_cards})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': str(e)}), 500 #something's wrong with ai
+
+@app.route('/api/generate_flashcards', methods=['POST'])
+def generate_flashcards():
+    data = request.get_json()
+    notes = data.get('notes', '').strip()
+    if not notes:
+        return jsonify({'error': 'notes are required goofy'}), 400 #if nothing is typed
+    
+    system_prompt = (
+        "generate 10 flashcards Q&A pairs for study from these notes: "
+        f"""{notes}""" + "\n"
+        "return a JSON list of objects, each with 'question' and 'answer' keys."
+    )
+    try:
+        completion = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "system", "content": "you are a helpful flashcard generator."},
+                      {"role": "user", "content": system_prompt}],
+            temperature=0.35,
+            max_tokens=650,
+            response_format={"type": "json_object"}
+        )
+        import json
+        raw_content = completion.choices[0].message.content
+        parsed = json.loads(raw_content)
+        flashcards = parsed["flashcards"] if "flashcards" in parsed else parsed
+        result_cards = []
+        for fc in flashcards:
+            if isinstance(fc, dict) and 'question' in fc and 'answer' in fc:
+                result_cards.append({
+                    'front': str(fc['question']),
+                    'back': str(fc['answer'])
+                })
+        return jsonify({'flashcards': result_cards})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500 #somthing's prob wrong with ai
 
 if __name__ == '__main__':
-    app.run(debug=False, port=5001)
+    app.run(debug=False, port=5000)
