@@ -4,7 +4,7 @@ import os
 import openai
 
 #set API key from environment 
-#openai.api_key = os.environ.get('key')
+
 
 app = Flask(__name__)
 CORS(app)
