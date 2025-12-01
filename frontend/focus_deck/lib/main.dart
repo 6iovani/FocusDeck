@@ -38,21 +38,26 @@ class _FlashcardHomePageState extends State<FlashcardHomePage> {
   Future<void> _generateFlashcards() async {
     final prompt = _promptController.text.trim();
     if (prompt.isEmpty) return;
+
     setState(() {
       _isLoading = true;
       _error = null;
       _flashcards = [];
     });
+
     try {
       final response = await http.post(
-        Uri.parse('http://127.0.0.1:5000/api/flashcards'),
+        Uri.parse('http://127.0.0.1:5000/api/generate_flashcards'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'prompt': prompt}),
+        body: jsonEncode({'notes': prompt}), // backend expects "notes"
       );
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['flashcards'] is List) {
+
+        if (data['success'] == true && data['flashcards'] is List) {
           final cardList = data['flashcards'] as List;
+
           _flashcards = cardList
               .map<Map<String, String>>(
                 (f) => {
