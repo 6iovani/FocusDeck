@@ -34,6 +34,9 @@ bld/
 [Ll]og/
 [Ll]ogs/
 
+#ignore api keys
+backend/firebase_service_account.json
+
 # Build results on 'Bin' directories
 **/[Bb]in/*
 # Uncomment if you have tasks that rely on *.refresh files to move binaries
@@ -52,7 +55,7 @@ Generated\ Files/
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
 *.trx
-
+.cursor
 # NUnit
 *.VisualState.xml
 TestResult.xml
