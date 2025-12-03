@@ -1,0 +1,28 @@
+---
+alwaysApply: true
+---
+
+FocusDeck is a study assistant app with a Flutter Web frontend and a Flask backend.
+Its purpose is to allow students to:
+	Generate flashcards from pasted notes
+	Save flashcard sets to Firebase (via REST + ID token auth)
+	Load saved flashcard sets
+	Generate study guides (AI-assisted)
+	Save study guides
+
+The backend handles authentication, AI generation, and storing structured content in Firebase.
+The frontend provides the UI to generate, view, save, and load flashcards/study guides.
+
+Tech Stack (DO NOT CHANGE,ADD,REMOVE):
+
+Frontend
+	•	Flutter Web
+	•	SharedPreferences for token storage
+	•	HTTP package for requests
+
+Backend
+	•	Python Flask
+	•	Firebase Authentication
+	•	Firebase Firestore
+	•	AI model for generating flashcards / study guides
+	•	CORS enabled

@@ -23,3 +23,26 @@ class FlashcardService:
 
         text = resp.text
         return self.parser.parse(text)
+    
+    def generate_study_guide(self, notes: str):
+        """
+        Uses Gemini to convert raw notes into a structured study guide.
+        """
+        prompt = f"""
+        Convert the following notes into a clean, structured study guide.
+
+        Requirements:
+        - Use headings, bullet points, and short explanations
+        - Highlight key terms
+        - Keep formatting simple (no markdown tables)
+
+        NOTES:
+        {notes}
+        """
+        
+
+        response = self.client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
+        return response.text
