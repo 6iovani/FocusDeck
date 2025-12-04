@@ -2,8 +2,15 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const FocusDeckApp());
 }
 
@@ -113,9 +120,53 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             },
             child: Text(signup ? 'Signup' : 'Login'),
           ),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.login),
+            label: const Text('Sign in with Google'),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _googleSignInFlow();
+            },
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _googleSignInFlow() async {
+    try {
+      GoogleSignIn googleSignIn;
+      if (kIsWeb) {
+        googleSignIn = GoogleSignIn(
+          clientId: DefaultFirebaseOptions.webClientId, // Always use this for web
+        );
+      } else {
+        googleSignIn = GoogleSignIn();
+      }
+
+      final googleUser = await googleSignIn.signIn();
+      if (googleUser == null) {
+        _showSnack("Google sign-in cancelled");
+        return;
+      }
+      final googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+      final userCred = await FirebaseAuth.instance.signInWithCredential(credential);
+      final token = await userCred.user?.getIdToken();
+      if (token != null) {
+        await _saveToken(token);
+        _showSnack("Signed in with Google!");
+        setState(() {});
+      } else {
+        _showSnack("Google token retrieval failed");
+      }
+    } catch (e) {
+      print("Google Sign-In error: $e");
+      _showSnack("Google sign-in failed: $e");
+    }
   }
 
   Future<void> _authAPICall(String type, String email, String pass) async {
@@ -132,7 +183,11 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       } else if (type == 'signup' && resp.statusCode == 200) {
         _showSnack("Signup success! Please login.");
       } else {
-        _showSnack("Auth failed");
+        String msg = 'Auth failed';
+        try {
+          msg = jsonDecode(resp.body)['error'] ?? msg;
+        } catch (_) {}
+        _showSnack(msg);
       }
     } catch (_) {
       _showSnack("Auth error");
@@ -361,50 +416,50 @@ class _FlashcardTabState extends State<FlashcardTab> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
       child: Column(children: [
-        TextField(
-          controller: _promptController,
-          decoration: const InputDecoration(
-            labelText: "Enter notes or topic",
-            border: OutlineInputBorder(),
-          ),
-          maxLines: 4,
-        ),
-        const SizedBox(height: 12),
+            TextField(
+              controller: _promptController,
+              decoration: const InputDecoration(
+                labelText: "Enter notes or topic",
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 4,
+            ),
+            const SizedBox(height: 12),
         Row(children: [
-          ElevatedButton(
-            onPressed: _isLoading ? null : _generateFlashcards,
-            child: const Text("Generate Flashcards"),
-          ),
-          const SizedBox(width: 8),
-          ElevatedButton(
-            onPressed: _flashcards.isEmpty ? null : _saveFlashcardSet,
-            child: const Text("Save Set"),
-          ),
-          const SizedBox(width: 8),
-          ElevatedButton(
-            onPressed: _loadSavedFlashcards,
-            child: const Text("Load Saved"),
-          ),
-        ]),
-        const SizedBox(height: 16),
-        if (_isLoading) const CircularProgressIndicator(),
-        if (_error != null) Text(_error!, style: const TextStyle(color: Colors.red)),
-        const SizedBox(height: 12),
-        Expanded(
-          child: ListView.builder(
-            itemCount: _flashcards.length,
-            itemBuilder: (ctx, i) {
-              final c = _flashcards[i];
-              return Card(
-                child: ListTile(
-                  title: Text(c['question'] ?? ''),
-                  subtitle: Text(c['answer'] ?? ''),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _generateFlashcards,
+                  child: const Text("Generate Flashcards"),
                 ),
-              );
-            },
-          ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: _flashcards.isEmpty ? null : _saveFlashcardSet,
+                  child: const Text("Save Set"),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: _loadSavedFlashcards,
+                  child: const Text("Load Saved"),
+                ),
+        ]),
+            const SizedBox(height: 16),
+            if (_isLoading) const CircularProgressIndicator(),
+        if (_error != null) Text(_error!, style: const TextStyle(color: Colors.red)),
+            const SizedBox(height: 12),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _flashcards.length,
+                itemBuilder: (ctx, i) {
+                  final c = _flashcards[i];
+                  return Card(
+                    child: ListTile(
+                      title: Text(c['question'] ?? ''),
+                      subtitle: Text(c['answer'] ?? ''),
+                    ),
+                  );
+                },
+              ),
         ),
       ]),
     );

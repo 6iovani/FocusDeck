@@ -42,12 +42,12 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyB_l75-kXkupKxWdViVW6QMRtEvPL4fUMI',
-    appId: '1:1007494287491:web:9133365dd4f8b50de4cbb6',
+    appId: '1:1007494287491:web:bb4f029b9ef2a685e4cbb6',
     messagingSenderId: '1007494287491',
     projectId: 'focusdeck-ffebb',
     authDomain: 'focusdeck-ffebb.firebaseapp.com',
     storageBucket: 'focusdeck-ffebb.firebasestorage.app',
-    measurementId: 'G-NTB9W4R8F5',
+    measurementId: 'G-2Z8CZFX3F7',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -87,4 +87,6 @@ class DefaultFirebaseOptions {
     storageBucket: 'focusdeck-ffebb.firebasestorage.app',
     measurementId: 'G-NTB9W4R8F5',
   );
+
+  static const String webClientId = '1007494287491-t1nnivjobvuq6pq5dg30jpg4130i1ios.apps.googleusercontent.com';
 }
