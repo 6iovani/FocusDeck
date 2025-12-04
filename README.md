@@ -1,11 +1,11 @@
 # FocusDeck
 A web app that helps students study through flashcards.
 FocusDeck allows users to:
-- Generate flashcards from notes/topics using AI (Gemini API)  
-- Save, load, and delete flashcards per user  
+- Generate flashcards and/or quizzes from notes/topics using AI (Gemini API)  
+- Save, load, and delete flashcards/quizzes  
 - Authenticate via Firebase login/signup 
 
-# commands
+# Commands
 
 from the terminal cd into backend and activate virtual environment "$source venv/bin/activate"
 install dependencies "pip install -r requirements.txt"
@@ -51,12 +51,12 @@ FocusDeck/
 
 # Backend Python File Overview
 
-- **app.py**: The main web server for the backend, built with Flask. Defines all API endpoints for login, flashcard/study guide generation, saving, loading, and deleting. Connects all services and handles incoming web requests.
+- app.py: The main web server for the backend, built with Flask. Defines all API endpoints for login, flashcard/study guide generation, saving, loading, and deleting. Connects all services and handles incoming web requests.
 
-- **firebase_client.py**: Responsible for setting up the connection between this backend and Firebase, using secret credentials. Makes Firestore database and Firebase Auth available to the rest of the backend.
+- firebase_client.py: Responsible for setting up the connection between this backend and Firebase, using secret credentials. Makes Firestore database and Firebase Auth available to the rest of the backend.
 
-- **services/auth_service.py**: Handles all authentication logic (sign up, login, email validation, sending email verification links, token verification). Uses the Firebase Identity Toolkit REST API to ensure only real/verified users can log in, and blocks use of fake or unverified emails.
+- services/auth_service.py: Handles all authentication logic (sign up, login, email validation, sending email verification links, token verification). Uses the Firebase Identity Toolkit REST API to ensure only real/verified users can log in, and blocks use of fake or unverified emails.
 
-- **services/flashcard_service.py**: Connects to the Gemini AI model and gives it special prompts to generate either flashcards (with options for depth and number) or study guides (with clean formatting). Also parses and cleans any AI-generated data for use downstream.
+- services/flashcard_service.py: Connects to the Gemini AI model and gives it special prompts to generate either flashcards (with options for depth and number) or study guides (with clean formatting). Also parses and cleans any AI-generated data for use downstream.
 
-- **repositories/flashcard_repository.py**: Stores, loads, and deletes flashcards and study guides for each user in Firestore database. Organizes data into subcollections within each user's document for scalable, secure storage.
+- repositories/flashcard_repository.py: Stores, loads, and deletes flashcards and study guides for each user in Firestore database. Organizes data into subcollections within each user's document for scalable, secure storage.
