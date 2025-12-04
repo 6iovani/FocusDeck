@@ -242,6 +242,59 @@ class _FlashcardTabState extends State<FlashcardTab> {
   List<Map<String, String>> _flashcards = [];
   bool _isLoading = false;
   String? _error;
+  int _flashcardCount = 10;
+  String _detailLevel = 'brief'; // 'brief' or 'long'
+
+  Future<void> _promptFlashcardParamsAndGenerate() async {
+    int count = _flashcardCount;
+    String detail = _detailLevel;
+    await showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text("Customize Flashcards"),
+          content: StatefulBuilder(
+            builder: (ctx, setDialogState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      const Text("Amount:"),
+                      const SizedBox(width: 12),
+                      DropdownButton<int>(
+                        value: count,
+                        items: const [10, 20, 30].map((v) => DropdownMenuItem(value: v, child: Text("$v"))).toList(),
+                        onChanged: (val) => setDialogState(() => count = val ?? 10),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      const Text("Detail:"),
+                      const SizedBox(width: 12),
+                      ToggleButtons(
+                        isSelected: [detail == 'brief', detail == 'long'],
+                        onPressed: (idx) => setDialogState(() => detail = idx == 0 ? 'brief' : 'long'),
+                        children: const [Text('Brief'), Text('Long')],
+                      )
+                    ],
+                  )
+                ],
+              );
+            },
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+            ElevatedButton(
+              onPressed: () { _flashcardCount = count; _detailLevel = detail; Navigator.pop(ctx); _generateFlashcards(); },
+              child: const Text("Generate"),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Future<void> _generateFlashcards() async {
     final prompt = _promptController.text.trim();
@@ -255,7 +308,11 @@ class _FlashcardTabState extends State<FlashcardTab> {
       final resp = await http.post(
         Uri.parse('$backendBase/generate_flashcards'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'notes': prompt}),
+        body: jsonEncode({
+          'notes': prompt,
+          'amount': _flashcardCount,
+          'detail': _detailLevel,
+        }),
       );
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);
@@ -267,7 +324,6 @@ class _FlashcardTabState extends State<FlashcardTab> {
               'answer': c['answer']?.toString() ?? ''
             };
           } else if (c is Map) {
-            // fallback for any Map type
             return Map<String, String>.fromEntries(
               c.entries.map((e) => MapEntry(e.key.toString(), e.value?.toString() ?? '')),
             );
@@ -429,7 +485,7 @@ class _FlashcardTabState extends State<FlashcardTab> {
             const SizedBox(height: 12),
         Row(children: [
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _generateFlashcards,
+                  onPressed: _isLoading ? null : _promptFlashcardParamsAndGenerate,
                   child: const Text("Generate Flashcards"),
                 ),
                 const SizedBox(width: 8),
