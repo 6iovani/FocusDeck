@@ -2,7 +2,6 @@ import os, json
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-
 from firebase_client import FirebaseClient
 from services.auth_service import AuthService
 from services.flashcard_service import FlashcardService
@@ -10,21 +9,24 @@ from repositories.flashcard_repository import FlashcardRepository
 from utils.api_response import ApiResponse
 from utils.error_handler import ErrorHandler
 
+# Load secrets and API keys from local .env file
 load_dotenv()
 
-# Initialize services
+# Setup all connections to Firebase and services
 firebase = FirebaseClient()
 auth_service = AuthService(firebase_client=firebase)
 flashcard_service = FlashcardService()
 flashcard_repo = FlashcardRepository(firebase_client=firebase)
 
 app = Flask(__name__)
+# Allow any front-end origin (dev/published) to talk to API
 CORS(app, resources={r"/api/*": {
     "origins": "*",
     "allow_headers": ["Content-Type", "Authorization"],
     "methods": ["GET", "POST", "DELETE", "OPTIONS"]
 }})
 
+# Add CORS headers to all OPTIONS preflight requests
 @app.before_request
 def handle_options():
     if request.method == "OPTIONS":
@@ -35,11 +37,13 @@ def handle_options():
         headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
         return response
 
+# Health endpoint so frontends can check if the API is alive
 @app.route("/api/health")
 def health():
     return jsonify({"status": "ok"})
 
-# AUTH ROUTES
+
+# signup a new user in Firebase Authentication
 @app.route("/api/signup", methods=["POST"])
 def signup():
     try:
@@ -51,6 +55,7 @@ def signup():
     except Exception as e:
         return ErrorHandler.handle(e)
 
+# Log a user into Firebase using email and password
 @app.route("/api/login", methods=["POST"])
 def login():
     try:
@@ -62,22 +67,26 @@ def login():
     except Exception as e:
         return ErrorHandler.handle(e)
 
+# Log a user out (dummy route, for front-end state clearing)
 @app.route("/api/logout", methods=["POST"])
 def logout():
     return ApiResponse.success({"message": "Logged out"})
 
-# FLASHCARD GENERATION
+
+# Generates flashcards from user-submitted notes using Gemini
 @app.route("/api/generate_flashcards", methods=["POST"])
 def generate_flashcards():
     try:
         data = request.get_json()
         notes = data.get("notes")
-        cards = flashcard_service.generate_flashcards(notes)
+        amount = data.get("amount", 10)
+        detail = data.get("detail", "brief")
+        cards = flashcard_service.generate_flashcards(notes, amount=amount, detail=detail)
         return ApiResponse.success({"flashcards": cards})
     except Exception as e:
         return ErrorHandler.handle(e)
 
-# FLASHCARD STORAGE
+# Saves a list of flashcards under the user's library in Firestore
 @app.route("/api/flashcards/save", methods=["POST"])
 def save_flashcards():
     try:
@@ -91,6 +100,7 @@ def save_flashcards():
     except Exception as e:
         return ErrorHandler.handle(e)
 
+# Loads all saved flashcard sets for the current user
 @app.route("/api/flashcards/load", methods=["GET"])
 def load_flashcards():
     try:
@@ -101,6 +111,7 @@ def load_flashcards():
     except Exception as e:
         return ErrorHandler.handle(e)
 
+# Deletes a specific flashcard set for the user
 @app.route("/api/flashcards/delete/<set_id>", methods=["DELETE"])
 def delete_flashcard_set(set_id):
     try:
@@ -111,7 +122,9 @@ def delete_flashcard_set(set_id):
     except Exception as e:
         return ErrorHandler.handle(e)
 
-# STUDY GUIDE
+
+
+# Generates a detailed study guide from user notes using Gemini
 @app.route("/api/generate_study_guide", methods=["POST"])
 def generate_study_guide():
     try:
@@ -124,6 +137,7 @@ def generate_study_guide():
     except Exception as e:
         return ErrorHandler.handle(e)
 
+# Saves a generated study guide for the user
 @app.route("/api/study_guides/save", methods=["POST"])
 def save_study_guide():
     try:
@@ -137,6 +151,7 @@ def save_study_guide():
     except Exception as e:
         return ErrorHandler.handle(e)
 
+# Loads all study guides the user has saved
 @app.route("/api/study_guides/load", methods=["GET"])
 def load_study_guides():
     try:
@@ -147,6 +162,7 @@ def load_study_guides():
     except Exception as e:
         return ErrorHandler.handle(e)
 
+# Deletes a particular study guide for a user
 @app.route("/api/study_guides/delete/<guide_id>", methods=["DELETE"])
 def delete_study_guide(guide_id):
     try:
@@ -158,4 +174,5 @@ def delete_study_guide(guide_id):
         return ErrorHandler.handle(e)
 
 if __name__ == "__main__":
+    # Entry point for running dev server
     app.run(debug=False, port=5000)
